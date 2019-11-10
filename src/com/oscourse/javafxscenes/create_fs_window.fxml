@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="420.0" prefWidth="400.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.oscourse.controllers.CreateFsWindowController">
+   <children>
+      <TextField fx:id="fsNameField" layoutX="77.0" layoutY="27.0" prefHeight="27.0" prefWidth="237.0" promptText="Название файловой системы" />
+      <TextField fx:id="hddSizeField" layoutX="77.0" layoutY="77.0" prefHeight="27.0" prefWidth="237.0" promptText=" Размер HDD" />
+      <ChoiceBox fx:id="clusterSizeChoiceBox" layoutX="203.0" layoutY="131.0" prefHeight="27.0" prefWidth="111.0" />
+      <Label layoutX="77.0" layoutY="136.0" text="Размер кластера" />
+      <TextField fx:id="userNameField" layoutX="77.0" layoutY="182.0" prefHeight="27.0" prefWidth="237.0" promptText="Имя пользователя" />
+      <TextField fx:id="passwordField" layoutX="77.0" layoutY="229.0" prefHeight="27.0" prefWidth="237.0" promptText="Пароль" />
+      <Button fx:id="createButton" layoutX="160.0" layoutY="276.0" mnemonicParsing="false" text="Создать" />
+      <Label fx:id="errorField" alignment="TOP_CENTER" layoutX="10.0" layoutY="303.0" prefHeight="103.0" prefWidth="380.0" textAlignment="CENTER" />
+   </children>
+</AnchorPane>
