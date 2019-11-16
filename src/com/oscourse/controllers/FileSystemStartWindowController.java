@@ -19,8 +19,6 @@ import java.io.RandomAccessFile;
 import java.net.URL;
 import java.util.ResourceBundle;
 
-import static com.oscourse.parameters.FileSystemParameters.currentFsName;
-
 public class FileSystemStartWindowController implements Initializable {
 
     @FXML

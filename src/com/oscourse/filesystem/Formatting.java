@@ -1,10 +1,8 @@
 package com.oscourse.filesystem;
 import com.oscourse.parameters.FileSystemParameters;
 import javafx.util.Pair;
-
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.util.*;
 
 import static com.oscourse.parameters.FileSystemParameters.*;
 
@@ -23,22 +21,8 @@ public class Formatting {
         int rootDirectoryOffset = FAT2offset + countOfBytesInFAT; // смещение корневого каталога
         int usersInfoOffset = rootDirectoryOffset + countOfBytesInRootDirectory; // cмещение таблицы пользователей
         int clustersCountForUserInfo = (int) Math.ceil(((27.0 * 256.0) / clusterSize));
-        System.out.println(clustersCountForUserInfo);
         int dataOffset = usersInfoOffset + (clustersCountForUserInfo * clusterSize); //смещение области с данными
-        //
-        // вывод "полезной" инфы
-        System.out.println("Размер HDD(б) : " + hddSize + "б");
-        System.out.println("Кол-во кластеров : " + countOfClusters);
-        System.out.println("Размер FAT: " + countOfBytesInFAT + "б");
-        System.out.println("Смещение FAT1 : " + FAT1offset + "б");
-        System.out.println("Смещение FAT2 : " + FAT2offset + "б");
-        System.out.println("Смешение корн. каталога : " + rootDirectoryOffset + "б");
-        System.out.println("Смещение таблицы пользователей : " + usersInfoOffset + "б");
-        System.out.println("Смещение данных : " + dataOffset + "б");
-        //
 
-//        File file = new File("/Users/bogdan/Desktop/OScourse", "mainfile"); // создание файла
-//        file.createNewFile(); // зе сейм
         FileOutputStream fos = new FileOutputStream("/Users/bogdan/Desktop/OScourse/" + fsName);
         RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + fsName, "rw");
 
@@ -100,13 +84,21 @@ public class Formatting {
 
     }
 
-    public static int open(String path, String name, String extension, short uid, byte modes){
-        if(name.length() > 10 || extension.length() > 3) return 0;
-
+    public static int createFile(String path, String name, String extension, short uid, byte modes) throws IOException{
+        if(name.length() > 20 || extension.length() > 3) return 0;
+        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + currentFsName, "rw");
+        if (path.equals("/")){
+            int freePlace = freePlaceInRootDirectory();
+            raf.seek(freePlace);
+            raf.writeBytes(name);
+            raf.seek(freePlace + 20);
+            
+        }
         return 1;
     }
 
 
+    // EDIT: ПОКА pos < dataOffset
     public static int freePlaceInRootDirectory() throws IOException{
         RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + currentFsName, "rw");
         raf.seek(rootDirectoryOffsetOffset);
@@ -128,10 +120,4 @@ public class Formatting {
         return 0;
     }
 
-    static int fromByteArray(byte[] bytes){
-        return  ((bytes[0] & 0xFF) << 24) |
-                ((bytes[1] & 0xFF) << 16) |
-                ((bytes[2] & 0xFF) << 8) |
-                ((bytes[3] & 0xFF) << 0);
-    }
 }

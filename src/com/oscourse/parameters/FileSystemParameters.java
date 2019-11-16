@@ -22,4 +22,14 @@ public class FileSystemParameters {
 
     public static String currentFsName;
     public static Byte currentUID;
+
+    //file info
+    public static short extensionsOffset = 20;
+    public static short modesOffset = 23;
+    public static short uidOffset = 24;
+    public static short fileSizeOffset = 25;
+    public static short createDateOffset = 29;
+    public static short modifyDateOffset = 37;
+    public static short flagsOffset = 45;
+    public static short clusterNumberOffset = 46;
 }
