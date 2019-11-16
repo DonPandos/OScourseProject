@@ -1,7 +1,6 @@
 package com.oscourse.controllers;
 
 import com.oscourse.filesystem.Formatting;
-import com.oscourse.parameters.FileSystemParameters;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
@@ -35,7 +34,7 @@ public class LoginWindowController implements Initializable {
                 Pair<Byte, String> user = Formatting.userSearch(loginField.getText());
                 if(user != null){
                     if(passwordField.getText().equals(user.getValue())){
-                        FileSystemParameters.currentUID = user.getKey();
+                        Formatting.CURRENT_UID = user.getKey();
                     }
                     else {
                         errorLabel.setText("Неверно введенные данные.");

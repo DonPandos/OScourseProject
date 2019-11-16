@@ -1,12 +1,41 @@
 package com.oscourse.filesystem;
-import com.oscourse.parameters.FileSystemParameters;
 import javafx.util.Pair;
 import java.io.*;
 import java.nio.ByteBuffer;
 
-import static com.oscourse.parameters.FileSystemParameters.*;
-
 public class Formatting {
+
+
+    public final static short NAME_OFFSET = 0;
+    public final static short CLUSTERS_COUNT_OFFSET = 10;
+    public final static short CLUSTERS_SIZE_OFFSET = 14;
+    public final static short FAT1_OFFSET_OFFSET = 16;
+    public final static short FAT2_OFFSET_OFFSET = 18;
+    public final static short ROOT_DIRECTORY_OFFSET_OFFSET = 22;
+    public final static short USERS_INFO_OFFSET_OFFSET = 26;
+    public final static short DATA_OFFSET_OFFSET = 30;
+
+    public final static short ROOT_DIRECTORY_GAP = 48; // размер записи в корневом каталоге
+    public final static short USERS_INFO_GAP = 27;
+
+    public final static short USERNAME_SIZE = 12;
+    public final static short PASSWORD_SIZE = 14;
+
+    public static short FAT_GAP; // размер записи в fat
+    public static short CLUSTER_SIZE;
+
+    public static String CURRENT_FS_NAME;
+    public static Byte CURRENT_UID;
+
+    //file info
+    public static short EXTENSIONS_OFFSET = 20;
+    public static short MODES_OFFSET = 23;
+    public static short UID_OFFSET = 24;
+    public static short FILE_SIZE_OFFSET = 25;
+    public static short CREATE_DATE_OFFSET = 29;
+    public static short MODIFY_DATE_OFFSET = 37;
+    public static short FLAGS_OFFSET = 45;
+    public static short CLUSTER_NUMBER_OFFSET = 46;
 
 
     public static void formattingFS(short clusterSize, int hddSize, String fsName, String username, String password) throws IOException{ // clusterSize - размер кластера ФС hddSize - размер HDD fsName - имя ФС
@@ -29,7 +58,7 @@ public class Formatting {
         raf.write(new byte[hddSize]); // заполняем файл байтами
         raf.seek(0); // смещение курсора на 0 позицию
         raf.writeBytes(fsName);
-        raf.seek(clustersCountOffset);
+        raf.seek(CLUSTERS_COUNT_OFFSET);
         raf.write(ByteBuffer.allocate(4).putInt(countOfClusters).array()); // записываем кол-во кластеров
         raf.write(ByteBuffer.allocate(2).putShort(clusterSize).array()); // записываем размер кластера
         raf.write(ByteBuffer.allocate(2).putShort(FAT1offset).array()); // записываем смещение ФАТ1
@@ -49,8 +78,8 @@ public class Formatting {
     public static Pair<Byte, String> userSearch(String username)  {
         RandomAccessFile raf = null;
         try {
-            raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + FileSystemParameters.currentFsName, "rw");
-            raf.seek(FileSystemParameters.usersInfoOffsetOffset);
+            raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+            raf.seek(USERS_INFO_OFFSET_OFFSET);
             int userInfoOffset = raf.readInt();
             raf.seek(userInfoOffset);
             while(true){
@@ -69,7 +98,7 @@ public class Formatting {
                     foundPassword = foundPassword.substring(0, foundPassword.indexOf(0x00));
                     return new Pair<>(uid, foundPassword);
                 }
-                userInfoOffset += FileSystemParameters.usersInfoGap;
+                userInfoOffset += USERS_INFO_GAP;
                 raf.seek(userInfoOffset);
             }
 
@@ -86,13 +115,14 @@ public class Formatting {
 
     public static int createFile(String path, String name, String extension, short uid, byte modes) throws IOException{
         if(name.length() > 20 || extension.length() > 3) return 0;
-        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + currentFsName, "rw");
+        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
         if (path.equals("/")){
             int freePlace = freePlaceInRootDirectory();
             raf.seek(freePlace);
             raf.writeBytes(name);
-            raf.seek(freePlace + 20);
-            
+            raf.seek(freePlace + EXTENSIONS_OFFSET);
+
+
         }
         return 1;
     }
@@ -100,8 +130,8 @@ public class Formatting {
 
     // EDIT: ПОКА pos < dataOffset
     public static int freePlaceInRootDirectory() throws IOException{
-        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + currentFsName, "rw");
-        raf.seek(rootDirectoryOffsetOffset);
+        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+        raf.seek(ROOT_DIRECTORY_OFFSET_OFFSET);
         int pos = raf.readInt();
         raf.seek(pos);
         while (true) {
@@ -113,8 +143,8 @@ public class Formatting {
     }
 
     public static int freeCluster() throws IOException{
-        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + currentFsName, "rw");
-        raf.seek(fat1OffsetOffset);
+        RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+        raf.seek(FAT1_OFFSET_OFFSET);
         short pos = raf.readShort();
         raf.seek(pos);
         return 0;

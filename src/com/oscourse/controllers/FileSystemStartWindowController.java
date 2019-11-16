@@ -1,6 +1,6 @@
 package com.oscourse.controllers;
 
-import com.oscourse.parameters.FileSystemParameters;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URL;
 import java.util.ResourceBundle;
+
+import static com.oscourse.filesystem.Formatting.*;
 
 public class FileSystemStartWindowController implements Initializable {
 
@@ -58,15 +60,15 @@ public class FileSystemStartWindowController implements Initializable {
         });
 
         enterButton.setOnMouseClicked(event -> {
-            FileSystemParameters.currentFsName = fsList.getSelectionModel().getSelectedItem();
+            CURRENT_FS_NAME = fsList.getSelectionModel().getSelectedItem();
             try {
-                RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + FileSystemParameters.currentFsName, "rw");
-                raf.seek(FileSystemParameters.clusterSizeOffset);
-                FileSystemParameters.clusterSize = raf.readShort();
-                raf.seek(FileSystemParameters.clustersCountOffset);
+                RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+                raf.seek(CLUSTERS_SIZE_OFFSET);
+                CLUSTER_SIZE = raf.readShort();
+                raf.seek(CLUSTERS_COUNT_OFFSET);
                 int countOfClusters = raf.readInt();
-                if(countOfClusters < Math.pow(2, 16) - 1) FileSystemParameters.fatGap = 2; // кол-во байт в таблице FAT
-                else FileSystemParameters.fatGap = 4;
+                if(countOfClusters < Math.pow(2, 16) - 1) FAT_GAP = 2; // кол-во байт в таблице FAT
+                else FAT_GAP = 4;
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/login_window.fxml"));
                 Parent root1;
                 root1 = (Parent) fxmlLoader.load();
