@@ -1,0 +1,159 @@
+.root{
+    -fx-font-family: "Lucida Grande";
+    -fx-background-color: #444444;
+}
+
+.menu-bar {
+    -fx-background-color: #212121;
+    -fx-font-size: 12px;
+}
+
+.menu-bar .menu{
+    -fx-padding: 0px 0px 0px 0px
+}
+
+.menu-bar .menu .label {
+    -fx-text-fill: #E9E9E9;
+    -fx-text-alignment: center;
+    -fx-padding: 3px 5px 3px 5px;
+}
+
+.menu-bar .menu .label .text {
+    -fx-text-alignment: center;
+}
+
+.menu:hover {
+    -fx-background-color: transparent;
+}
+
+.menu:showing .label{
+    -fx-background-color: #0096C9;
+}
+
+#img-menu .label{
+    -fx-background-image: url("../img/watermelon-icon.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 20px;
+    -fx-padding: 0px 15px 6px 15px;
+}
+
+#img-menu .menu-item .label{
+    -fx-background-image: none;
+}
+
+.menu:showing .menu-item .label{
+    -fx-background-color: none;
+}
+
+.menu:showing .text{
+    -fx-text-fill: #212121;
+}
+
+
+.menu-bar .menu .menu-item  {
+    -fx-text-alignment: center;
+    -fx-start-margin: 0px;
+    -fx-end-margin: 0px;
+    -fx-padding: 0px 15px 0px 15px;
+}
+
+.menu-bar .menu .menu-item .label {
+    -fx-padding: 0px 0px 0px 0px !important;
+}
+
+.context-menu {
+    -fx-background-color: rgba(33, 33, 33, .8);
+    -fx-min-width: 70px;
+    -fx-padding: 3px 0px;
+    -fx-border-radius: 0px 0px 5px 5px;
+    -fx-background-radius: 0px 0px 5px 5px;
+    -fx-border-width: 0px 1px 1px 1px;
+    -fx-border-color: #5c5c5e;
+}
+
+
+.table-view{
+    -fx-background-color: transparent;
+}
+
+.table-view:focused{
+    -fx-background-color: transparent;
+}
+
+
+
+.table-view .column-header-background {
+    -fx-background-color: #212121;
+}
+
+.table-view .column-header-background .filler{
+    -fx-background-color: #444444;
+}
+
+.table-view .column-header-background .label{
+    -fx-background-color: transparent;
+    -fx-text-fill: #E9E9E9;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+.table-view .table-cell{
+    -fx-text-fill: #E9E9E9;
+}
+
+.table-row-cell{
+    -fx-background-color: -fx-table-cell-border-color, #616161;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0.0em; /* 0 */
+}
+
+.table-row-cell:odd{
+    -fx-background-color: -fx-table-cell-border-color, #424242;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0.0em; /* 0 */
+}
+
+.table-view #last-column{
+    -fx-border-width: 1px 0px 1px 1px;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #005797;
+    -fx-background-insets: 0;
+    -fx-background-radius: 1;
+}
+
+.table-view > .virtual-flow > .scroll-bar:vertical,
+.table-view > .virtual-flow > .scroll-bar:vertical > .track,
+.table-view > .virtual-flow > .scroll-bar:vertical > .track-background,
+.table-view > .virtual-flow > .scroll-bar:horizontal,
+.table-view > .virtual-flow > .scroll-bar:horizontal > .track,
+.table-view > .virtual-flow > .scroll-bar:horizontal > .track-background {
+    -fx-background-color: transparent;
+}
+
+
+
+.table-view > .virtual-flow > .scroll-bar > .increment-button,
+.table-view > .virtual-flow > .scroll-bar > .decrement-button {
+    -fx-opacity: 0;
+}
+
+.button {
+    -fx-background-color: #6D6B6C;
+    -fx-background-insets: 0 0 -1 0,0,1;
+    -fx-background-radius: 5px;
+    -fx-padding: 3 30 3 30;
+    -fx-text-fill: #E9E9E9;
+    -fx-font-size: 14px;
+    -fx-border-width: 1px;
+    -fx-border-color: #2E2D2E;
+    -fx-border-radius: 5px;
+}
+
+.button:pressed{
+    -fx-background-color: linear-gradient(to top, #2266EA, #347EFA);
+}

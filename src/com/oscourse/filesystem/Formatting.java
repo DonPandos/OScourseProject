@@ -1,7 +1,14 @@
 package com.oscourse.filesystem;
+import com.sun.tools.doclets.formats.html.SourceToHTMLConverter;
 import javafx.util.Pair;
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Date;
 
 public class Formatting {
 
@@ -28,14 +35,14 @@ public class Formatting {
     public static Byte CURRENT_UID;
 
     //file info
-    public static short EXTENSIONS_OFFSET = 20;
-    public static short MODES_OFFSET = 23;
-    public static short UID_OFFSET = 24;
-    public static short FILE_SIZE_OFFSET = 25;
-    public static short CREATE_DATE_OFFSET = 29;
-    public static short MODIFY_DATE_OFFSET = 37;
-    public static short FLAGS_OFFSET = 45;
-    public static short CLUSTER_NUMBER_OFFSET = 46;
+    public static short EXTENSIONS_OFFSET = 21;
+    public static short MODES_OFFSET = 24;
+    public static short UID_OFFSET = 25;
+    public static short FILE_SIZE_OFFSET = 26;
+    public static short CREATE_DATE_OFFSET = 30;
+    public static short MODIFY_DATE_OFFSET = 38;
+    public static short FLAGS_OFFSET = 46;
+    public static short CLUSTER_NUMBER_OFFSET = 47;
 
 
     public static void formattingFS(short clusterSize, int hddSize, String fsName, String username, String password) throws IOException{ // clusterSize - размер кластера ФС hddSize - размер HDD fsName - имя ФС
@@ -113,7 +120,7 @@ public class Formatting {
 
     }
 
-    public static int createFile(String path, String name, String extension, short uid, byte modes) throws IOException{
+    public static int createFile(String path, String name, String extension, short uid, byte modes, byte flags, int clusterNumber) throws IOException{
         if(name.length() > 20 || extension.length() > 3) return 0;
         RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
         if (path.equals("/")){
@@ -121,8 +128,19 @@ public class Formatting {
             raf.seek(freePlace);
             raf.writeBytes(name);
             raf.seek(freePlace + EXTENSIONS_OFFSET);
-
-
+            raf.writeBytes(extension);
+            raf.seek(freePlace + MODES_OFFSET);
+            raf.writeByte(modes);
+            raf.writeShort(uid);
+            raf.writeInt(0);
+            String date = new SimpleDateFormat("ddMMyyyy").format(new Date());
+            raf.writeBytes(date);
+            raf.writeBytes(date);
+            raf.writeByte(flags);
+            raf.writeInt(clusterNumber);
+//            raf.write
+            raf.close();
+            System.out.println("im here");
         }
         return 1;
     }
@@ -131,15 +149,66 @@ public class Formatting {
     // EDIT: ПОКА pos < dataOffset
     public static int freePlaceInRootDirectory() throws IOException{
         RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+        raf.seek(DATA_OFFSET_OFFSET);
+        int dataOffset = raf.readInt();
         raf.seek(ROOT_DIRECTORY_OFFSET_OFFSET);
         int pos = raf.readInt();
-        raf.seek(pos);
-        while (true) {
+        while (pos < dataOffset) {
+            raf.seek(pos);
             if(raf.readByte() == 0x00){
                 raf.close();
                 return pos;
-            } else pos+=48;
+            } else pos+=51;
         }
+        return 0;
+    }
+
+    public static ArrayList<File> readFilesInRootDirectory(){
+       ArrayList<File> files = new ArrayList<>();
+        try {
+            RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+            raf.seek(DATA_OFFSET_OFFSET);
+            int dataOffset = raf.readInt();
+            raf.seek(ROOT_DIRECTORY_OFFSET_OFFSET);
+            int pos = raf.readInt();
+            while(pos < dataOffset){
+                System.out.println("In while");
+                raf.seek(pos);
+                byte[] nameByteArr = new byte[20];
+                byte[] sizeByteArr = new byte[4];
+                byte[] extensionByteArr = new byte[3];
+                byte[] dateByteArr = new byte[8];
+                byte[] typeByteArr = new byte[1];
+                raf.read(nameByteArr);
+                if(nameByteArr[0] == 0x00) break;
+                raf.read(extensionByteArr);
+                raf.read(typeByteArr);
+                raf.seek(pos + FILE_SIZE_OFFSET);
+                raf.read(sizeByteArr);
+                raf.seek(pos + CREATE_DATE_OFFSET);
+                raf.read(dateByteArr);
+                String name = new String(nameByteArr);
+                Integer size = ByteBuffer.wrap(sizeByteArr).getInt();
+                String extension = new String(extensionByteArr);
+                String date = dateWithDots(new String(dateByteArr));
+                BitSet bitSet = BitSet.valueOf(typeByteArr);
+                String type = bitSet.get(0) ? "Папка" : "Файл";
+                System.out.println(name + " " + size.toString() + " " + extension + " " + date + " " + type);
+                files.add(new File(name, size.toString() + " б", extension, date, type));
+                pos += 51;
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return files;
+    }
+
+    public static String dateWithDots(String date){
+        StringBuffer returnDate = new StringBuffer(date);
+        returnDate.insert(4, ".");
+        returnDate.insert(2, ".");
+        return returnDate.toString();
     }
 
     public static int freeCluster() throws IOException{
