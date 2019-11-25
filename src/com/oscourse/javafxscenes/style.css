@@ -12,6 +12,7 @@
     -fx-padding: 0px 0px 0px 0px
 }
 
+
 .menu-bar .menu .label {
     -fx-text-fill: #E9E9E9;
     -fx-text-alignment: center;
@@ -156,4 +157,28 @@
 
 .button:pressed{
     -fx-background-color: linear-gradient(to top, #2266EA, #347EFA);
+}
+
+
+#back-button {
+    -fx-background-image: url("../img/up-arrow.png");
+    -fx-background-size: 21px;
+    -fx-background-repeat: no-repeat;
+}
+
+#back-button:pressed {
+    -fx-background-image: url("../img/up-arrow-black.png");
+}
+
+#power-button {
+    -fx-background-image: url("../img/power.png");
+    -fx-background-size: 21px;
+    -fx-background-repeat: no-repeat;
+}
+
+#power-button:pressed {
+    -fx-background-image: url("../img/power-black.png");
+}
+.choice-box .menu-item .label {
+    -fx-text-fill: #E9E9E9;
 }

@@ -6,7 +6,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 
 
-<AnchorPane prefHeight="223.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.oscourse.controllers.LoginWindowController">
+<AnchorPane prefHeight="223.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.oscourse.controllers.LoginWindowController" >
    <children>
       <TextField fx:id="loginField" alignment="CENTER" layoutX="53.0" layoutY="47.0" prefHeight="27.0" prefWidth="195.0" promptText="Логин" />
       <TextField fx:id="passwordField" alignment="CENTER" layoutX="53.0" layoutY="87.0" prefHeight="27.0" prefWidth="195.0" promptText="Пароль" />
