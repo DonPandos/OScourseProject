@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+
+<AnchorPane prefHeight="400.0" prefWidth="300.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.oscourse.controllers.UsersListWindowController">
+   <children>
+      <TableView fx:id="usersTv" prefHeight="400.0" prefWidth="300.0">
+        <columns>
+          <TableColumn fx:id="usernameColumn" prefWidth="200.0" text="Username" />
+          <TableColumn fx:id="typeColumn" prefWidth="98.0" text="Type" />
+        </columns>
+      </TableView>
+   </children>
+</AnchorPane>

@@ -43,6 +43,7 @@ public class LoginWindowController implements Initializable {
                     if(passwordField.getText().equals(user.getValue())){
                         Formatting.CURRENT_UID = user.getKey();
                         Formatting.CURRENT_DIR = "/";
+                        Formatting.IS_ADMIN = Formatting.isAdmin(Formatting.CURRENT_UID);
                         try {
                             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/main_window_fs.fxml"));
                             Parent root1;

@@ -17,15 +17,16 @@
         <menus>
           <Menu id="img-menu" mnemonicParsing="false" styleClass="menu-icon">
             <items>
-              <MenuItem id="img-menu" mnemonicParsing="false" styleClass="menu-item" text="Информация о системе" />
+              <MenuItem id="img-menu" mnemonicParsing="false" styleClass="menu-item" text="About system" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" styleClass="menu" text="Настройки">
+          <Menu mnemonicParsing="false" styleClass="menu" text="Users">
             <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
+                <MenuItem fx:id="addUserButton" mnemonicParsing="false" text="Add user" />
+                <MenuItem fx:id="usersListButton" mnemonicParsing="false" text="Users list" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" styleClass="menu" text="Справка">
+          <Menu mnemonicParsing="false" styleClass="menu" text="Info">
             <items>
               <MenuItem mnemonicParsing="false" text="About" />
             </items>
@@ -34,20 +35,23 @@
       </MenuBar>
       <TableView fx:id="tv" layoutX="330.0" layoutY="40.0" prefHeight="480.0" prefWidth="670.0">
         <columns>
-          <TableColumn fx:id="filenameColumn" prefWidth="294.0" text="Название файла" />
-            <TableColumn fx:id="sizeColumn" prefWidth="70.0" text="Размер" />
-          <TableColumn fx:id="extensionColumn" minWidth="0.0" prefWidth="90.0" text="Расширение" />
-            <TableColumn fx:id="dateColumn" prefWidth="110.0" text="Дата создания" />
-            <TableColumn id="last-column" fx:id="typeColumn" text="Тип файла" />
+          <TableColumn fx:id="filenameColumn" prefWidth="294.0" text="File name" />
+            <TableColumn fx:id="sizeColumn" prefWidth="70.0" text="Size" />
+          <TableColumn fx:id="extensionColumn" minWidth="0.0" prefWidth="90.0" text="Extension" />
+            <TableColumn fx:id="dateColumn" prefWidth="110.0" text="Create date" />
+            <TableColumn id="last-column" fx:id="typeColumn" text="Type" />
         </columns>
       </TableView>
-      <Button fx:id="createFileBtn" layoutX="330.0" layoutY="525.0" mnemonicParsing="false" text="Создать файл" />
+      <Button fx:id="createFileBtn" layoutX="330.0" layoutY="525.0" mnemonicParsing="false" prefWidth="150.0" text="Create file" />
       <Label id="back-button" fx:id="backBtn" layoutX="330.0" layoutY="21.0" prefHeight="21.0" prefWidth="21.0" />
       <Label id="power-button" fx:id="powerBtn" layoutX="975.0" prefHeight="20.0" prefWidth="20.0" />
-      <TextField fx:id="pathField" editable="false" layoutX="351.0" layoutY="23.0" prefHeight="9.0" prefWidth="643.0" text="/">
+      <TextField fx:id="pathField" editable="false" layoutX="351.0" layoutY="23.0" prefHeight="9.0" prefWidth="643.0">
          <font>
             <Font size="8.0" />
          </font>
       </TextField>
+      <Button fx:id="propertiesButton" layoutX="500.0" layoutY="525.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Properties" />
+      <Button fx:id="renameButton" layoutX="670.0" layoutY="525.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Rename" />
+      <Button fx:id="deleteButton" layoutX="840.0" layoutY="525.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Delete" />
    </children>
 </AnchorPane>

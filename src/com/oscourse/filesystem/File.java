@@ -13,7 +13,8 @@ public class File {
     public File(String name, String size, String extension, String date, String type) {
         this.name = name;
         this.size = size;
-        this.extension = extension;
+        if(extension.contains("\u0000")) this.extension = extension.substring(0, extension.indexOf("\u0000"));
+        else this.extension = extension;
         this.date = date;
         this.type = type;
     }
@@ -56,5 +57,13 @@ public class File {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getFullFileName(){
+        if(extension == null || extension.equals("")){
+            return name;
+        } else {
+            return name + "." + extension;
+        }
     }
 }

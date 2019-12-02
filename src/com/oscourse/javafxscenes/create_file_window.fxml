@@ -8,9 +8,9 @@
 
 <AnchorPane prefHeight="150.0" prefWidth="200.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.oscourse.controllers.CreateFileWindowController">
    <children>
-      <TextField fx:id="fileName" layoutX="15.0" layoutY="40.0" prefHeight="25.0" prefWidth="170.0" promptText="Имя" />
-      <Button fx:id="addBtn" layoutX="40.0" layoutY="75.0" mnemonicParsing="false" text="Создать" />
+      <TextField fx:id="fileName" layoutX="15.0" layoutY="40.0" prefHeight="25.0" prefWidth="170.0" promptText="Name" />
+      <Button fx:id="addBtn" layoutX="40.0" layoutY="75.0" mnemonicParsing="false" text="Create" />
       <ChoiceBox fx:id="typeChoiceBox" layoutX="25.0" layoutY="7.0" prefWidth="150.0" />
-      <Label fx:id="errorLabel" alignment="CENTER" layoutX="15.0" layoutY="120.0" prefHeight="15.0" prefWidth="170.0" textFill="#e9e9e9" />
+      <Label fx:id="errorLabel" alignment="CENTER" contentDisplay="CENTER" layoutX="15.0" layoutY="101.0" prefHeight="44.0" prefWidth="170.0" textAlignment="CENTER" textFill="#e9e9e9" wrapText="true" />
    </children>
 </AnchorPane>
