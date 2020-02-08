@@ -1,6 +1,7 @@
 package com.oscourse.filesystem;
 
 import javafx.util.Pair;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
@@ -95,6 +96,8 @@ public class Formatting {
             while (startByte + USERS_INFO_GAP < endByte) {
                 raf.seek(startByte);
                 if (raf.readByte() == 0x00) {
+                    raf.seek(startByte);
+                    raf.write(new byte[USERS_INFO_GAP]);
                     raf.seek(startByte);
                     raf.writeByte(freeUID);
                     raf.writeBytes(username);
@@ -205,7 +208,7 @@ public class Formatting {
 
                 if (username.contains("\u0000")) username = username.substring(0, username.indexOf("\u0000"));
                 if (password.contains("\u0000")) password = password.substring(0, password.indexOf("\u0000"));
-                users.add(new User(UID, username, password, isAdmin == 1 ? "Admin" : "User"));
+                users.add(new User(UID, username, password, isAdmin == 1 ? UID == 1 ? "Root" : "Admin " : "User"));
 
                 startByte += USERS_INFO_GAP;
             }
@@ -241,7 +244,7 @@ public class Formatting {
     }
 
     public static boolean[] getFileRights(String path) {
-        if (IS_ADMIN) return new boolean[]{true, true, true};
+        if (IS_ADMIN || path.equals("/")) return new boolean[]{true, true, true};
         boolean owner = false;
         int startByte = getStartByteOfFile(path);
         if (startByte == -1) return null;
@@ -259,10 +262,6 @@ public class Formatting {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public static void open(String path) {
-
     }
 
     public static int createFileInFolder(boolean type, String path, String name) {
@@ -284,7 +283,6 @@ public class Formatting {
                         raf.seek(offset);
                         if (raf.readByte() == 0x00) {
                             createFile(offset, type, name);
-                            System.out.println("here " + path);
                             increaseSizeFoldersInPath(path, 50);
                             raf.close();
                             return 1;
@@ -309,6 +307,12 @@ public class Formatting {
                         clusterEnd = nextCluster * CLUSTER_SIZE;
                     } else {
                         int freeCluster = freeCluster();
+                        // очищение данных кластера, если это папка
+                        if(type == true){
+                            raf.seek((freeCluster * CLUSTER_SIZE) - CLUSTER_SIZE);
+                            raf.write(new byte[CLUSTER_SIZE]);
+                        }
+                        //
                         raf.seek(fat1);
                         switch (FAT_GAP) {
                             case 2:
@@ -354,8 +358,14 @@ public class Formatting {
             raf.writeBytes(date);
             raf.writeByte(0);
             int cluster = freeCluster();
-            System.out.println("free cluster " + cluster);
             raf.writeInt(cluster);
+
+            // очищение данных кластера, если это папка
+            if(type == true){
+                raf.seek((cluster * CLUSTER_SIZE) - CLUSTER_SIZE);
+                raf.write(new byte[CLUSTER_SIZE]);
+            }
+            //
 
             raf.seek(FAT1_OFFSET_OFFSET);
             short fat1 = raf.readShort();
@@ -399,7 +409,14 @@ public class Formatting {
                         break;
                 }
                 raf.seek(FAT1offset + (prevClusterNumber * FAT_GAP) - FAT_GAP);
-                raf.writeByte(0x00);
+                switch (FAT_GAP) {
+                    case 2:
+                        raf.writeShort(0x00);
+                        break;
+                    case 4:
+                        raf.writeInt(0x00);
+                        break;
+                }
                 if (clusterNumber == -1) {
                     break;
                 }
@@ -453,8 +470,9 @@ public class Formatting {
                         String name = new String(nameByteArr);
                         String extension = new String(extensionByteArr);
 
-                        if(name.contains("\u0000")) name = name.substring(0, name.indexOf("\u0000"));
-                        if(extension.contains("\u0000")) extension = extension.substring(0, extension.indexOf("\u0000"));
+                        if (name.contains("\u0000")) name = name.substring(0, name.indexOf("\u0000"));
+                        if (extension.contains("\u0000"))
+                            extension = extension.substring(0, extension.indexOf("\u0000"));
 
                         deleteFile(extension.equals("") ? path + "/" + name : path + "/" + name + "." + extension);
                     }
@@ -466,14 +484,21 @@ public class Formatting {
                 raf.seek(fat1);
                 clusterNumber = FAT_GAP == 2 ? raf.readShort() : raf.readInt();
                 raf.seek(fat1);
-                raf.writeByte(0x00);
+                switch (FAT_GAP) {
+                    case 2:
+                        raf.writeShort(0x00);
+                        break;
+                    case 4:
+                        raf.writeInt(0x00);
+                        break;
+                }
                 if (clusterNumber > 0) {
                     startByte = (clusterNumber * CLUSTER_SIZE) - CLUSTER_SIZE;
                     endByte = clusterNumber * CLUSTER_SIZE;
                 } else {
                     raf.seek(startByteOfFile);
                     raf.writeByte(0x00);
-                    increaseSizeFoldersInPath(path.substring(0, path.lastIndexOf("/")),  -1 * FILE_GAP);
+                    increaseSizeFoldersInPath(path.substring(0, path.lastIndexOf("/")), -1 * FILE_GAP);
                     raf.close();
                     return 1;
                 }
@@ -482,6 +507,23 @@ public class Formatting {
             e.printStackTrace();
         }
         return 1;
+    }
+
+    public static boolean haveRightsToDeleteFolder(String path){
+        if(IS_ADMIN) return true;
+        ArrayList<File> files = getFilesFromFolder(path, false);
+        for(File file : files){
+            switch(file.getType()){
+                case "File":
+                    if(getFileRights(path.equals("/") ? path + file.getFullFileName() : path + "/" + file.getFullFileName())[1]) continue;
+                    return false;
+                case "Folder":
+                    String filePath = path.equals("/") ? path + file.getFullFileName() : path + "/" + file.getFullFileName();
+                    if(getFileRights(filePath)[1] && haveRightsToDeleteFolder(filePath)) continue;
+                    return false;
+            }
+        }
+        return true;
     }
 
     public static int freePlaceInRootDirectory() {
@@ -504,7 +546,7 @@ public class Formatting {
         return -1;
     }
 
-    public static ArrayList<File> readFilesInRootDirectory() {
+    public static ArrayList<File> readFilesInRootDirectory(boolean withHidden) {
         ArrayList<File> files = new ArrayList<>();
         try {
             RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
@@ -524,6 +566,17 @@ public class Formatting {
                     pos += 50;
                     continue;
                 }
+                byte[] flags = new byte[1];
+                raf.seek(pos + FLAGS_OFFSET);
+                raf.read(flags);
+                BitSet bs = BitSet.valueOf(flags);
+                if(!IS_ADMIN && withHidden){
+                    if(bs.get(6)) {
+                        pos += FILE_GAP;
+                        continue;
+                    }
+                }
+                raf.seek(pos + EXTENSIONS_OFFSET);
                 raf.read(extensionByteArr);
                 raf.read(typeByteArr);
                 raf.seek(pos + FILE_SIZE_OFFSET);
@@ -538,7 +591,7 @@ public class Formatting {
                 BitSet bitSet = BitSet.valueOf(typeByteArr);
                 String type = bitSet.get(7) ? "Folder" : "File";
                 Float sizeKb = ((float) size) / 1024;
-                files.add(new File(name, String.format("%.1f", sizeKb) + " Kb", extension, date, type));
+                files.add(new File(name, String.format("%.1f", sizeKb) + " Kb", extension, date, type, bs.get(7)));
                 pos += 50;
 
             }
@@ -569,7 +622,7 @@ public class Formatting {
         while (pos + FAT_GAP < end) {
             pos = fat1 + (startCluster * FAT_GAP) - FAT_GAP;
             raf.seek(pos);
-            byte b = raf.readByte();
+            int b = FAT_GAP == 2 ? raf.readShort() : raf.readInt();
             if (b == 0x00) {
                 return startCluster;
             }
@@ -590,190 +643,23 @@ public class Formatting {
     }
 
     public static int getFileStartCluster(String path) {
-//        if (path.indexOf("/") == path.lastIndexOf("/")) {
-//            String fileName = path.substring(path.indexOf("/") + 1, path.length());
-//            String fileExtension = null;
-//            if(fileName.contains(".")){
-//                fileExtension = fileName.substring(fileName.indexOf(".") + 1, fileName.length());
-//                fileName = fileName.substring(0, fileName.indexOf("."));
-//            }
-//            try {
-//                RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
-//                raf.seek(USERS_INFO_OFFSET_OFFSET);
-//                int rootEnd = raf.readInt();
-//                raf.seek(ROOT_DIRECTORY_OFFSET_OFFSET);
-//                int rootPos = raf.readInt();
-//                while (rootPos + FILE_GAP < rootEnd) {
-//                    raf.seek(rootPos);
-//                    byte[] nameByteArr = new byte[20];
-//                    raf.read(nameByteArr);
-//                    if (nameByteArr[0] == 0x00) break;
-//                    String name = new String(nameByteArr);
-//                    name = name.substring(0, name.indexOf("\u0000"));
-//                    if (fileName.equals(name)) {
-//                        if(fileExtension != null){
-//                            raf.seek(rootPos + EXTENSIONS_OFFSET);
-//                            byte[] extensionByteArr = new byte[3];
-//                            raf.read(extensionByteArr);
-//                            String extension = new String(extensionByteArr);
-//                            if(extension.contains("\u0000")) extension = extension.substring(0, extension.indexOf("\u0000"));
-//                            if(fileExtension.equals(extension)){
-//                                rootPos += CLUSTER_NUMBER_OFFSET;
-//                                raf.seek(rootPos);
-//                                return raf.readInt();
-//                            }
-//                        } else {
-//                            rootPos += CLUSTER_NUMBER_OFFSET;
-//                            raf.seek(rootPos);
-//                            return raf.readInt();
-//                        }
-//                    }
-//                    rootPos += FILE_GAP;
-//                }
-//                raf.close();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        } else {
-//            path = path.substring(1, path.length()); // /home/src -> home/src
-//            String fileName = path.substring(0, path.indexOf("/")); // home
-//            String fileExtension = null;
-//            if(fileName.contains(".")){
-//                fileExtension = fileName.substring(fileName.indexOf(".") + 1, fileName.length());
-//                fileName = fileName.substring(0, fileName.indexOf("."));
-//            }
-//            path = path.substring(path.indexOf("/"), path.length()); // /src
-//            try {
-//                RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
-//                raf.seek(DATA_OFFSET_OFFSET);
-//                int rootEnd = raf.readInt();
-//                raf.seek(ROOT_DIRECTORY_OFFSET_OFFSET);
-//                int rootPos = raf.readInt();
-//                while (rootPos + FILE_GAP < rootEnd) {
-//                    raf.seek(rootPos);
-//                    byte[] nameByteArr = new byte[20];
-//                    raf.read(nameByteArr);
-//                    if (nameByteArr[0] == 0x00) break;
-//                    String name = new String(nameByteArr);
-//                    name = name.substring(0, name.indexOf("\u0000"));
-//                    if (fileName.equals(name)) {
-//                        if(fileExtension != null){
-//                            raf.seek(rootPos + EXTENSIONS_OFFSET);
-//                            byte[] extensionByteArr = new byte[3];
-//                            raf.read(extensionByteArr);
-//                            String extension = new String(extensionByteArr);
-//                            if(extension.contains("\u0000")) extension = extension.substring(0, extension.indexOf("\u0000"));
-//                            if(fileExtension.equals(extension)){
-//                                rootPos += CLUSTER_NUMBER_OFFSET;
-//                                raf.seek(rootPos);
-//                                return raf.readInt();
-//                            }
-//                        } else {
-//                            raf.seek(rootPos + CLUSTER_NUMBER_OFFSET);
-//                            int clusterNumber = raf.readInt();
-//                            return getFileStartCluster(clusterNumber, path);
-//                        }
-//                    }
-//                    rootPos += FILE_GAP;
-//                }
-//                raf.close();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//
-//        }
-
         try {
             RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
-            raf.seek(getStartByteOfFile(path) + CLUSTER_NUMBER_OFFSET);
-            return raf.readInt();
+            int startByte = getStartByteOfFile(path);
+            if(startByte == -1) return -1;
+            else {
+                raf.seek(startByte + CLUSTER_NUMBER_OFFSET);
+                return raf.readInt();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return -1;
     }
 
-//    private static int getFileStartCluster(int clusterNumber, String path) {
-//        String fileName = "";
-//        if (path.indexOf("/") == path.lastIndexOf("/")) {
-//            fileName = path.substring(1, path.length());
-//            path = "";
-//        } else {
-//            path = path.substring(1, path.length()); // /home/src -> home/src
-//            fileName = path.substring(0, path.indexOf("/")); // home
-//            path = path.substring(path.indexOf("/"), path.length()); //
-//        }
-//        String fileExtension = null;
-//        if(fileName.contains(".")){
-//            fileExtension = fileName.substring(fileName.indexOf(".") + 1, fileName.length());
-//            fileName = fileName.substring(0, fileName.indexOf("."));
-//        }
-//        try {
-//            RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
-//            int startByte = (clusterNumber * CLUSTER_SIZE) - CLUSTER_SIZE;
-//            int endByte = clusterNumber * CLUSTER_SIZE;
-//            while (true) {
-//                System.out.println("WHILE TRUE");
-//                while (startByte + 50 < endByte) {
-//                    raf.seek(startByte);
-//                    byte[] nameByteArr = new byte[20];
-//                    raf.read(nameByteArr);
-//                    if (nameByteArr[0] == 0x00) break;
-//                    String name = new String(nameByteArr);
-//                    name = name.substring(0, name.indexOf("\u0000"));
-//                    if (fileName.equals(name)) {
-//                        if(fileExtension != null){
-//                            raf.seek(startByte + EXTENSIONS_OFFSET);
-//                            byte[] extensionByteArr = new byte[3];
-//                            raf.read(extensionByteArr);
-//                            String extension = new String(extensionByteArr);
-//                            if(extension.contains("\u0000")) extension = extension.substring(0, extension.indexOf("\u0000"));
-//                            if(fileExtension.equals(extension)){
-//                                raf.seek(startByte + CLUSTER_NUMBER_OFFSET);
-//                                int cluster = raf.readInt();
-//                                raf.close();
-//                                if (path.equals("")) return cluster;
-//                                else return getFileStartCluster(cluster, path);
-//                            }
-//                        } else {
-//                            raf.seek(startByte + CLUSTER_NUMBER_OFFSET);
-//                            int cluster = raf.readInt();
-//                            raf.close();
-//                            if (path.equals("")) return cluster;
-//                            else return getFileStartCluster(cluster, path);
-//                        }
-//                    }
-//                    startByte += FILE_GAP;
-//                }
-//                raf.seek(FAT1_OFFSET_OFFSET);
-//                int fat1 = raf.readShort();
-//                fat1 += (clusterNumber * FAT_GAP) - FAT_GAP;
-//                raf.seek(fat1);
-//                int nextCluster = 0;
-//                switch (FAT_GAP) {
-//                    case 2:
-//                        clusterNumber = raf.readShort();
-//                        break;
-//                    case 4:
-//                        clusterNumber = raf.readInt();
-//                        break;
-//                }
-//                if (clusterNumber > 0) {
-//                    startByte = (clusterNumber * CLUSTER_SIZE) - CLUSTER_SIZE;
-//                    endByte = clusterNumber * CLUSTER_SIZE;
-//                } else {
-//                    return -1;
-//                }
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//        return -1;
-//    }
-
-    public static ArrayList<File> getFilesFromFolder(String path) {
+    public static ArrayList<File> getFilesFromFolder(String path, boolean withHidden) {
         ArrayList<File> files = new ArrayList<>();
-        if (path.equals("/")) return readFilesInRootDirectory();
+        if (path.equals("/")) return readFilesInRootDirectory(withHidden);
         else {
             try {
                 int clusterNumber = getFileStartCluster(path);
@@ -787,12 +673,23 @@ public class Formatting {
                             startByte += FILE_GAP;
                             continue;
                         }
-                        raf.seek(startByte);
                         byte[] nameByteArr = new byte[20];
                         byte[] sizeByteArr = new byte[4];
                         byte[] extensionByteArr = new byte[3];
                         byte[] dateByteArr = new byte[8];
                         byte[] typeByteArr = new byte[1];
+                        byte[] flags = new byte[1];
+                        raf.seek(startByte + FLAGS_OFFSET);
+                        raf.read(flags);
+                        BitSet bs = BitSet.valueOf(flags);
+                        if(!IS_ADMIN && withHidden){
+                            if(bs.get(6)) {
+                                System.out.println("HERE");
+                                startByte += FILE_GAP;
+                                continue;
+                            }
+                        }
+                        raf.seek(startByte);
                         raf.read(nameByteArr);
                         raf.read(extensionByteArr);
                         raf.read(typeByteArr);
@@ -801,14 +698,14 @@ public class Formatting {
                         raf.seek(startByte + CREATE_DATE_OFFSET);
                         raf.read(dateByteArr);
                         String name = new String(nameByteArr);
-                        name = name.substring(0, name.indexOf("\u0000"));
+                        if(name.contains("\u0000")) name = name.substring(0, name.indexOf("\u0000"));
                         Integer size = ByteBuffer.wrap(sizeByteArr).getInt();
                         String extension = new String(extensionByteArr);
                         String date = dateWithDots(new String(dateByteArr));
                         BitSet bitSet = BitSet.valueOf(typeByteArr);
                         String type = bitSet.get(7) ? "Folder" : "File";
                         Float sizeKb = ((float) size) / 1024;
-                        files.add(new File(name, String.format("%.1f", sizeKb) + " Kb", extension, date, type));
+                        files.add(new File(name, String.format("%.1f", sizeKb) + " Kb", extension, date, type, bs.get(7)));
                         startByte += FILE_GAP;
                     }
                     raf.seek(FAT1_OFFSET_OFFSET);
@@ -957,7 +854,7 @@ public class Formatting {
         }
     }
 
-    public static String getDataFromFile(String filePath){
+    public static String getDataFromFile(String filePath) {
         int clusterNumber = getFileStartCluster(filePath);
         int startByte = getStartByteOfFile(filePath);
         String data = "";
@@ -967,10 +864,8 @@ public class Formatting {
             int fat1Offset = raf.readShort();
             raf.seek(startByte + FILE_SIZE_OFFSET);
             int size = raf.readInt();
-            while(size > 0){
-                System.out.println("clustn " + clusterNumber);
+            while (size > 0) {
                 int pos = (clusterNumber * CLUSTER_SIZE) - CLUSTER_SIZE;
-                System.out.println("pos " + pos);
                 raf.seek(pos);
                 byte[] dataArray = size > CLUSTER_SIZE ? new byte[CLUSTER_SIZE] : new byte[size];
                 raf.read(dataArray);
@@ -988,8 +883,7 @@ public class Formatting {
         return data;
     }
 
-
-    public static int saveFileData(String data, String filePath){
+    public static int saveFileData(String data, String filePath) {
         int clusterNumber = getFileStartCluster(filePath);
         int startByte = getStartByteOfFile(filePath);
 
@@ -1011,12 +905,10 @@ public class Formatting {
                 clusterNumber = FAT_GAP == 2 ? raf.readShort() : raf.readInt();
                 pointer -= CLUSTER_SIZE;
                 currByte += CLUSTER_SIZE;
-                System.out.println("currclcr " + clusterNumber);
-                if(pointer > 0 && clusterNumber == -1){
+                if (pointer > 0 && clusterNumber == -1) {
                     int newCluster = freeCluster();
-                    System.out.println("frecl " + newCluster);
                     raf.seek(fat1Offset + (prevCluster * FAT_GAP) - FAT_GAP);
-                    switch(FAT_GAP){
+                    switch (FAT_GAP) {
                         case 2:
                             raf.writeShort(newCluster);
                             break;
@@ -1026,7 +918,7 @@ public class Formatting {
                     }
                     clusterNumber = newCluster;
                     raf.seek(fat1Offset + (clusterNumber * FAT_GAP) - FAT_GAP);
-                    switch(FAT_GAP){
+                    switch (FAT_GAP) {
                         case 2:
                             raf.writeShort(-1);
                             break;
@@ -1035,9 +927,9 @@ public class Formatting {
                             break;
                     }
                 }
-                if(pointer <=0){
+                if (pointer <= 0) {
                     raf.seek(fat1Offset + (clusterNumber * FAT_GAP) - FAT_GAP);
-                    switch(FAT_GAP){
+                    switch (FAT_GAP) {
                         case 2:
                             raf.writeShort(-1);
                             break;
@@ -1055,11 +947,203 @@ public class Formatting {
             System.out.println(folderPath);
             increaseSizeFoldersInPath(folderPath, -1 * prevSize);
             increaseSizeFoldersInPath(folderPath, size);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 1;
+    }
+
+    public static int moveFile(String filePath, String newPath) {
+        try {
+            RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+            int startByteOfFile = getStartByteOfFile(filePath);
+            raf.seek(startByteOfFile);
+            byte[] fileRecord = new byte[50];
+            raf.read(fileRecord);
+            raf.seek(startByteOfFile + FILE_SIZE_OFFSET);
+            int size = raf.readInt();
+            raf.seek(startByteOfFile);
+            raf.writeByte(0x00);
+            int freePlace;
+            if (newPath.equals("/")) {
+                freePlace = freePlaceInRootDirectory();
+            } else {
+                int clusterNumber = getFileStartCluster(newPath);
+                a:
+                while (true) {
+                    int startByte = (clusterNumber * CLUSTER_SIZE) - CLUSTER_SIZE;
+                    int endByte = (clusterNumber * CLUSTER_SIZE);
+                    while (startByte + FILE_GAP < endByte) {
+                        raf.seek(startByte);
+                        if (raf.readByte() == 0x00) {
+                            freePlace = startByte;
+                            break a;
+                        }
+                        startByte += FILE_GAP;
+                    }
+
+                    raf.seek(FAT1_OFFSET_OFFSET);
+                    int fat1 = raf.readShort();
+                    fat1 += (clusterNumber * FAT_GAP) - FAT_GAP;
+                    raf.seek(fat1);
+                    int nextCluster = 0;
+                    switch (FAT_GAP) {
+                        case 2:
+                            nextCluster = raf.readShort();
+                            break;
+                        case 4:
+                            nextCluster = raf.readInt();
+                            break;
+                    }
+                    if (nextCluster < 0) {
+                        int freeCluster = freeCluster();
+                        raf.seek(fat1);
+                        switch (FAT_GAP) {
+                            case 2:
+                                raf.writeShort(freeCluster);
+                                break;
+                            case 4:
+                                raf.writeInt(freeCluster);
+                                break;
+                        }
+                    }
+                }
+            }
+            raf.seek(freePlace);
+            raf.write(fileRecord);
+            String oldPath = filePath.substring(0, filePath.lastIndexOf("/"));
+            increaseSizeFoldersInPath(oldPath, -1 * (size + FILE_GAP));
+            increaseSizeFoldersInPath(newPath, size + FILE_GAP);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return 1;
+    }
+
+    public static int duplicateFile(String filePath, String newPath){
+        try {
+            RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+            int startByteOfFile = getStartByteOfFile(filePath);
+            raf.seek(startByteOfFile);
+            byte[] fileRecord = new byte[50];
+            raf.read(fileRecord);
+            raf.seek(startByteOfFile + FILE_SIZE_OFFSET);
+            int size = raf.readInt();
+            int freePlace;
+            if (newPath.equals("/")) {
+                freePlace = freePlaceInRootDirectory();
+            } else {
+                int clusterNumber = getFileStartCluster(newPath);
+                a:
+                while (true) {
+                    int startByte = (clusterNumber * CLUSTER_SIZE) - CLUSTER_SIZE;
+                    int endByte = (clusterNumber * CLUSTER_SIZE);
+                    while (startByte + FILE_GAP < endByte) {
+                        raf.seek(startByte);
+                        if (raf.readByte() == 0x00) {
+                            freePlace = startByte;
+                            break a;
+                        }
+                        startByte += FILE_GAP;
+                    }
+
+                    raf.seek(FAT1_OFFSET_OFFSET);
+                    int fat1 = raf.readShort();
+                    fat1 += (clusterNumber * FAT_GAP) - FAT_GAP;
+                    raf.seek(fat1);
+                    int nextCluster = 0;
+                    switch (FAT_GAP) {
+                        case 2:
+                            nextCluster = raf.readShort();
+                            break;
+                        case 4:
+                            nextCluster = raf.readInt();
+                            break;
+                    }
+                    if (nextCluster < 0) {
+                        int freeCluster = freeCluster();
+                        raf.seek(fat1);
+                        switch (FAT_GAP) {
+                            case 2:
+                                raf.writeShort(freeCluster);
+                                break;
+                            case 4:
+                                raf.writeInt(freeCluster);
+                                break;
+                        }
+                    }
+                }
+            }
+            raf.seek(freePlace);
+            raf.write(fileRecord);
+            int freeCluster = freeCluster();
+            System.out.println("freeCl " + freeCluster);
+            raf.seek(freePlace + CLUSTER_NUMBER_OFFSET);
+            raf.writeInt(freeCluster);
+            raf.seek(FAT1_OFFSET_OFFSET);
+            short fat1 = raf.readShort();
+            fat1 += (freeCluster * FAT_GAP) - FAT_GAP;
+            raf.seek(fat1);
+            switch (FAT_GAP) {
+                case 2:
+                    raf.writeShort(-1);
+                    break;
+                case 4:
+                    raf.writeInt(-1);
+                    break;
+            }
+            String fp = newPath + "/" + filePath.substring(filePath.lastIndexOf("/") + 1, filePath.length());
+            saveFileData(getDataFromFile(filePath), fp);
+            String oldPath = filePath.substring(0, filePath.lastIndexOf("/"));
+            increaseSizeFoldersInPath(newPath, size + FILE_GAP);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return 1;
+    }
+//
+//    public static int duplicateFolder(String filePath, String newPath){
+//        int startByteOfFile = getStartByteOfFile(filePath);
+//        int clusterNumber = getFileStartCluster(filePath);
+//        try{
+//            RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+//            byte[] fileRecord = new byte[50];
+//            raf.seek(startByteOfFile);
+//            raf.read(fileRecord);
+//
+//
+//        } catch (Exception e){
+//            e.printStackTrace();
+//        }
+//        return 1;
+//    }
+
+    public static int deleteUser(byte UID){
+        try {
+            RandomAccessFile raf = new RandomAccessFile("/Users/bogdan/Desktop/OScourse/" + CURRENT_FS_NAME, "rw");
+            raf.seek(DATA_OFFSET_OFFSET);
+            int dataOffset = raf.readInt();
+            raf.seek(USERS_INFO_OFFSET_OFFSET);
+            int offset = raf.readInt();
+            while(offset + USERS_INFO_GAP < dataOffset){
+                raf.seek(offset);
+                byte userUID = raf.readByte();
+                if(userUID == 0x00){
+                    offset += USERS_INFO_GAP;
+                    continue;
+                }
+                if(userUID == UID){
+                    raf.seek(offset);
+                    raf.writeByte(0x00);
+                    return 1;
+                }
+                offset += USERS_INFO_GAP;
+            }
         } catch (Exception e){
             e.printStackTrace();
         }
-
-
-        return 1;
+        return -1;
     }
 }

@@ -8,15 +8,24 @@ public class File {
     String extension;
     String date;
     String type;
+    boolean isSystem;
 
+    public boolean isSystem() {
+        return isSystem;
+    }
 
-    public File(String name, String size, String extension, String date, String type) {
+    public void setSystem(boolean system) {
+        isSystem = system;
+    }
+
+    public File(String name, String size, String extension, String date, String type, boolean isSystem) {
         this.name = name;
         this.size = size;
         if(extension.contains("\u0000")) this.extension = extension.substring(0, extension.indexOf("\u0000"));
         else this.extension = extension;
         this.date = date;
         this.type = type;
+        this.isSystem = isSystem;
     }
 
     public String getName() {

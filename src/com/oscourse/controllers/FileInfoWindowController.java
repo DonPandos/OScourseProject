@@ -98,7 +98,7 @@ public class FileInfoWindowController implements Initializable{
 
                 fileNameLabel.setText(new String(fileNameByteArr));
                 fileExtensionLabel.setText(new String(extensionByteArr));
-                fileSizeLabel.setText(String.valueOf(fileSize));
+                fileSizeLabel.setText(String.valueOf(fileSize) + " б");
                 fileOwnerLabel.setText(Formatting.getUsernameByUid(UID));
                 fileCreateDateLabel.setText(Formatting.dateWithDots(new String(createDateByteArr)));
                 fileModifyDateLabel.setText(Formatting.dateWithDots(new String(modifyDateByteArr)));
@@ -183,6 +183,7 @@ public class FileInfoWindowController implements Initializable{
             }
 
             ((Stage)systemCheck.getScene().getWindow()).close();
+            MainWindowController.updateInfoAboutFiles();
 
         });
     }

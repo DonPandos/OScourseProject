@@ -53,5 +53,10 @@
       <Button fx:id="propertiesButton" layoutX="500.0" layoutY="525.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Properties" />
       <Button fx:id="renameButton" layoutX="670.0" layoutY="525.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Rename" />
       <Button fx:id="deleteButton" layoutX="840.0" layoutY="525.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="150.0" text="Delete" />
+      <Button fx:id="duplicateButton" layoutX="670.0" layoutY="560.0" mnemonicParsing="false" prefWidth="150.0" text="Duplicate" />
+      <Button fx:id="moveButton" layoutX="840.0" layoutY="560.0" mnemonicParsing="false" prefWidth="150.0" text="Move" />
+      <Button fx:id="cancelButton" layoutX="500.0" layoutY="560.0" mnemonicParsing="false" prefWidth="150.0" text="Cancel" visible="false" />
+      <Button fx:id="moveHereButton" layoutX="330.0" layoutY="560.0" mnemonicParsing="false" prefWidth="150.0" text="Move here" visible="false" />
+      <Button fx:id="duplicateHereButton" layoutX="330.0" layoutY="560.0" mnemonicParsing="false" prefWidth="150.0" text="Duplic. here" visible="false" />
    </children>
 </AnchorPane>

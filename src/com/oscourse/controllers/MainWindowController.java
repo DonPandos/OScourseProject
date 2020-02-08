@@ -20,6 +20,8 @@ import java.text.Normalizer;
 import java.util.Date;
 import java.util.ResourceBundle;
 
+import static com.oscourse.filesystem.Formatting.IS_ADMIN;
+
 public class MainWindowController implements Initializable{
 
     @FXML TableView<File> tv;
@@ -33,10 +35,18 @@ public class MainWindowController implements Initializable{
     @FXML Button propertiesButton;
     @FXML Button renameButton;
     @FXML Button deleteButton;
+    @FXML Button duplicateButton;
+    @FXML Button moveButton;
+    @FXML Button cancelButton;
+    @FXML Button moveHereButton;
+    @FXML Button duplicateHereButton;
     @FXML TextField pathField;
     @FXML Label backBtn;
     @FXML MenuItem addUserButton;
     @FXML MenuItem usersListButton;
+
+    String pathOfFileToMove;
+    String pathOfFileToDuplicate;
 
     static ObservableList<File> files;
     @Override
@@ -79,7 +89,7 @@ public class MainWindowController implements Initializable{
 
         createFileBtn.setOnMouseClicked(event -> {
             String pageName;
-            if(Formatting.IS_ADMIN || Formatting.getFileRights(Formatting.CURRENT_DIR)[1]) pageName = "create_file_window.fxml";
+            if(IS_ADMIN || Formatting.getFileRights(Formatting.CURRENT_DIR)[1]) pageName = "create_file_window.fxml";
             else pageName = "havent_right_window.fxml";
             try {
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/" + pageName));
@@ -119,7 +129,7 @@ public class MainWindowController implements Initializable{
             String fileName = tv.getSelectionModel().getSelectedItem().getFullFileName();;
             filePath += fileName;
             System.out.println(filePath);
-            if(Formatting.IS_ADMIN || Formatting.getFileRights(filePath)[1]){
+            if(IS_ADMIN || Formatting.getFileRights(filePath)[1]){
                 try {
                     FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/rename_file_window.fxml"));
                     Parent root1 = (Parent) fxmlLoader.load();
@@ -150,28 +160,53 @@ public class MainWindowController implements Initializable{
 
         deleteButton.setOnMouseClicked(event -> {
             File file = tv.getSelectionModel().getSelectedItem();
-            String filePath = Formatting.CURRENT_DIR.equals("/") ? Formatting.CURRENT_DIR + file.getFullFileName() : Formatting.CURRENT_DIR + "/" + file.getFullFileName();
-            System.out.println("file Path" + filePath);
-            if (file != null){
-                if(Formatting.IS_ADMIN || Formatting.getFileRights(filePath)[1]) {
-                    if (file.getType().equals("File")) {
-                        Formatting.deleteFile(filePath);
-                    } else {
-                        Formatting.deleteFolder(filePath);
-                    }
-                } else {
-                    try {
-                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
-                        Parent root1 = (Parent) fxmlLoader.load();
-                        Stage stage = new Stage();
-                        stage.setScene(new Scene(root1));
-                        stage.show();
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
+            System.out.println(file.getFullFileName() + " " + file.isSystem());
+            if(Formatting.CURRENT_UID != 1 && file.isSystem()){
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/file_is_system.fxml"));
+                    Parent root1 = (Parent) fxmlLoader.load();
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(root1));
+                    stage.show();
+                } catch (Exception e){
+                    e.printStackTrace();
                 }
             }
-            refreshInfo();
+            else {
+                String filePath = Formatting.CURRENT_DIR.equals("/") ? Formatting.CURRENT_DIR + file.getFullFileName() : Formatting.CURRENT_DIR + "/" + file.getFullFileName();
+                System.out.println("file Path" + filePath);
+                if (file != null) {
+                    if (IS_ADMIN || Formatting.getFileRights(filePath)[1]) {
+                        if (file.getType().equals("File")) {
+                            Formatting.deleteFile(filePath);
+                        } else {
+                            if (Formatting.haveRightsToDeleteFolder(filePath)) Formatting.deleteFolder(filePath);
+                            else {
+                                try {
+                                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
+                                    Parent root1 = (Parent) fxmlLoader.load();
+                                    Stage stage = new Stage();
+                                    stage.setScene(new Scene(root1));
+                                    stage.show();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    } else {
+                        try {
+                            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
+                            Parent root1 = (Parent) fxmlLoader.load();
+                            Stage stage = new Stage();
+                            stage.setScene(new Scene(root1));
+                            stage.show();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                refreshInfo();
+            }
         });
 
         addUserButton.setOnAction(event -> {
@@ -200,6 +235,155 @@ public class MainWindowController implements Initializable{
             }
         });
 
+        duplicateButton.setOnMouseClicked(event -> {
+            File file = tv.getSelectionModel().getSelectedItem();
+            pathOfFileToDuplicate = Formatting.CURRENT_DIR.equals("/") ? Formatting.CURRENT_DIR + file.getFullFileName() : Formatting.CURRENT_DIR + "/" + file.getFullFileName();
+            if(!Formatting.getFileRights(pathOfFileToDuplicate)[1] && !IS_ADMIN){
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
+                    Parent root1 = (Parent) fxmlLoader.load();
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(root1));
+                    stage.show();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            } else if(file != null){
+                createFileBtn.setVisible(false);
+                propertiesButton.setVisible(false);
+                renameButton.setVisible(false);
+                deleteButton.setVisible(false);
+                moveButton.setVisible(false);
+                duplicateButton.setVisible(false);
+
+                duplicateHereButton.setVisible(true);
+                cancelButton.setVisible(true);
+
+            }
+        });
+
+        moveButton.setOnMouseClicked(event -> {
+            File file = tv.getSelectionModel().getSelectedItem();
+            pathOfFileToMove = Formatting.CURRENT_DIR.equals("/") ? Formatting.CURRENT_DIR + file.getFullFileName() : Formatting.CURRENT_DIR + "/" + file.getFullFileName();
+            if(!Formatting.getFileRights(pathOfFileToMove)[1] && !IS_ADMIN){
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
+                    Parent root1 = (Parent) fxmlLoader.load();
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(root1));
+                    stage.show();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            } else if(file != null){
+                createFileBtn.setVisible(false);
+                propertiesButton.setVisible(false);
+                renameButton.setVisible(false);
+                deleteButton.setVisible(false);
+                moveButton.setVisible(false);
+                duplicateButton.setVisible(false);
+
+                moveHereButton.setVisible(true);
+                cancelButton.setVisible(true);
+
+            }
+        });
+
+        cancelButton.setOnMouseClicked(event -> {
+            createFileBtn.setVisible(true);
+            propertiesButton.setVisible(true);
+            renameButton.setVisible(true);
+            deleteButton.setVisible(true);
+            moveButton.setVisible(true);
+            duplicateButton.setVisible(true);
+
+            moveHereButton.setVisible(false);
+            duplicateHereButton.setVisible(false);
+            cancelButton.setVisible(false);
+        });
+
+        moveHereButton.setOnMouseClicked(event -> {
+            if(!Formatting.getFileRights(Formatting.CURRENT_DIR)[1] && !IS_ADMIN){
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
+                    Parent root1 = (Parent) fxmlLoader.load();
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(root1));
+                    stage.show();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            } else {
+                String fileName = pathOfFileToMove.substring(pathOfFileToMove.lastIndexOf("/") + 1, pathOfFileToMove.length());
+                String newFilePath = Formatting.CURRENT_DIR.equals("/") ? Formatting.CURRENT_DIR + fileName : Formatting.CURRENT_DIR + "/" + fileName;
+                System.out.println(newFilePath);
+                if(Formatting.getFileStartCluster(newFilePath) == -1){
+                    Formatting.moveFile(pathOfFileToMove, Formatting.CURRENT_DIR);
+                    createFileBtn.setVisible(true);
+                    propertiesButton.setVisible(true);
+                    renameButton.setVisible(true);
+                    deleteButton.setVisible(true);
+                    moveButton.setVisible(true);
+                    duplicateButton.setVisible(true);
+
+                    moveHereButton.setVisible(false);
+                    cancelButton.setVisible(false);
+                } else {
+                    try {
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/filename_unavailable.fxml"));
+                        Parent root1 = (Parent) fxmlLoader.load();
+                        Stage stage = new Stage();
+                        stage.setScene(new Scene(root1));
+                        stage.show();
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            refreshInfo();
+        });
+
+        duplicateHereButton.setOnMouseClicked(event -> {
+            if(!Formatting.getFileRights(Formatting.CURRENT_DIR)[1] && !IS_ADMIN){
+                try {
+                    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
+                    Parent root1 = (Parent) fxmlLoader.load();
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(root1));
+                    stage.show();
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            } else {
+                String fileName = pathOfFileToDuplicate.substring(pathOfFileToDuplicate.lastIndexOf("/") + 1, pathOfFileToDuplicate.length());
+                String newFilePath = Formatting.CURRENT_DIR.equals("/") ? Formatting.CURRENT_DIR + fileName : Formatting.CURRENT_DIR + "/" + fileName;
+                System.out.println(newFilePath);
+                if(Formatting.getFileStartCluster(newFilePath) == -1){
+                    Formatting.duplicateFile(pathOfFileToDuplicate, Formatting.CURRENT_DIR);
+                    createFileBtn.setVisible(true);
+                    propertiesButton.setVisible(true);
+                    renameButton.setVisible(true);
+                    deleteButton.setVisible(true);
+                    moveButton.setVisible(true);
+                    duplicateButton.setVisible(true);
+
+                    duplicateHereButton.setVisible(false);
+                    cancelButton.setVisible(false);
+                } else {
+                    try {
+                        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/filename_unavailable.fxml"));
+                        Parent root1 = (Parent) fxmlLoader.load();
+                        Stage stage = new Stage();
+                        stage.setScene(new Scene(root1));
+                        stage.show();
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            refreshInfo();
+        });
+
         tv.setRowFactory( tv -> {
             TableRow<File> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
@@ -209,7 +393,7 @@ public class MainWindowController implements Initializable{
                     if(Formatting.CURRENT_DIR.equals("/")) newDir =Formatting.CURRENT_DIR + file.getFullFileName();
                     else newDir = Formatting.CURRENT_DIR + "/" + file.getFullFileName();
                     if(file.getType().equals("Folder")){
-                        if(!Formatting.IS_ADMIN && !Formatting.getFileRights(newDir)[0]){
+                        if(!IS_ADMIN && !Formatting.getFileRights(newDir)[0]){
                                 try{
                                     FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
                                     Parent root1;
@@ -227,7 +411,7 @@ public class MainWindowController implements Initializable{
                         }
                     }
                     else {
-                        if(!Formatting.IS_ADMIN && !Formatting.getFileRights(newDir)[0]){
+                        if(!IS_ADMIN && !Formatting.getFileRights(newDir)[0]){
                             try{
                                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/oscourse/javafxscenes/havent_right_window.fxml"));
                                 Parent root1;
@@ -266,7 +450,7 @@ public class MainWindowController implements Initializable{
 
     public static void updateInfoAboutFiles(){
         files.clear();
-        files.addAll(Formatting.getFilesFromFolder(Formatting.CURRENT_DIR));
+        files.addAll(Formatting.getFilesFromFolder(Formatting.CURRENT_DIR, true));
     }
 
 

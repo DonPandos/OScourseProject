@@ -182,3 +182,7 @@
 .choice-box .menu-item .label {
     -fx-text-fill: #E9E9E9;
 }
+
+.text-area .tool-bar {
+    -fx-text-fill: #E9E9E9;
+}
